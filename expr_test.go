@@ -2914,6 +2914,46 @@ func TestMemoryBudget(t *testing.T) {
 	}
 }
 
+func TestInstructionBudget(t *testing.T) {
+	tests := []struct {
+		code   string
+		budget uint
+		ok     bool
+	}{
+		{`1 + 2`, 1, true},                                            // straight-line code is never charged
+		{`let a = 1..100; sum(a, #)`, 10000, true},                    // small loop, large budget
+		{`let a = 1..100; sum(a, #)`, 100, false},                     // small loop, tiny budget
+		{`let a = 1..1000; sum(a, sum(a, sum(a, #)))`, 100000, false}, // nested loops
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.code, func(t *testing.T) {
+			program, err := expr.Compile(tt.code, expr.InstructionBudget(tt.budget))
+			require.NoError(t, err, "compile error")
+
+			for i := 0; i < 2; i++ { // the budget is reset on every run
+				_, err = expr.Run(program, nil)
+				if tt.ok {
+					require.NoError(t, err, "run error")
+				} else {
+					require.Error(t, err, "run error")
+					assert.Contains(t, err.Error(), "instruction budget exceeded")
+				}
+			}
+		})
+	}
+
+	t.Run("default", func(t *testing.T) {
+		saved := conf.DefaultInstructionBudget
+		conf.DefaultInstructionBudget = 100
+		defer func() { conf.DefaultInstructionBudget = saved }()
+
+		_, err := expr.Eval(`let a = 1..100; sum(a, #)`, nil)
+		require.Error(t, err, "run error")
+		assert.Contains(t, err.Error(), "instruction budget exceeded")
+	})
+}
+
 func TestIssue802(t *testing.T) {
 	prog, err := expr.Compile(`arr[1:2][0]`)
 	if err != nil {

@@ -16,6 +16,9 @@ var (
 
 	// DefaultMaxNodes represents default maximum allowed AST nodes by the compiler.
 	DefaultMaxNodes uint = 1e4
+
+	// DefaultInstructionBudget represents default maximum allowed instructions executed by the vm.VM.
+	DefaultInstructionBudget uint = 1e8
 )
 
 type FunctionsTable map[string]*builtin.Function
@@ -41,6 +44,8 @@ type Config struct {
 	// When enabled, the lexer treats `if`/`else` as identifiers and the parser
 	// will not parse `if` statements.
 	DisableIfOperator bool
+	// InstructionBudget limits instructions executed per run; zero means DefaultInstructionBudget.
+	InstructionBudget uint
 }
 
 // CreateNew creates new config with default values.

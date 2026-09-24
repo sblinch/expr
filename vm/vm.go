@@ -90,6 +90,11 @@ func (vm *VM) Run(program *Program, env any) (_ any, err error) {
 	vm.memory = 0
 	vm.ip = 0
 
+	budget := int(program.InstructionBudget)
+	if budget == 0 {
+		budget = int(conf.DefaultInstructionBudget)
+	}
+
 	var fnArgsBuf []any
 
 	for vm.ip < len(program.Bytecode) {
@@ -231,6 +236,12 @@ func (vm *VM) Run(program *Program, env any) (_ any, err error) {
 			}
 
 		case OpJumpBackward:
+			// Only OpJumpBackward can repeat bytecode, so the loop body's instruction length is subtracted from the
+			// instruction budget before each backward jump.
+			budget -= arg
+			if budget < 0 {
+				panic("instruction budget exceeded")
+			}
 			vm.ip -= arg
 
 		case OpIn:

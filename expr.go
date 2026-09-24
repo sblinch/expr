@@ -225,6 +225,16 @@ func MaxNodes(n uint) Option {
 	}
 }
 
+// InstructionBudget sets the maximum number of instructions the program may execute; it is applied only when expression
+// uses loops.
+// By default, the maximum number of instructions is conf.DefaultInstructionBudget.
+// If InstructionBudget is set to 0, the default budget is used.
+func InstructionBudget(n uint) Option {
+	return func(c *conf.Config) {
+		c.InstructionBudget = n
+	}
+}
+
 // Compile parses and compiles given input expression to bytecode program.
 func Compile(input string, ops ...Option) (*vm.Program, error) {
 	config := conf.CreateNew()

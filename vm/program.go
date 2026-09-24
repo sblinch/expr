@@ -21,6 +21,8 @@ type Program struct {
 	Arguments []int
 	Constants []any
 
+	InstructionBudget uint
+
 	source    file.Source
 	node      ast.Node
 	locations []file.Location
